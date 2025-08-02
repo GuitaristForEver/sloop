@@ -12,22 +12,133 @@ For full license text, see LICENSE.txt file in the repo root or https://opensour
     <script src="webfiles/debug.js"></script>
     <title>Sloop Debug Menu</title>
     <link rel='shortcut icon' type='image/x-icon' href='webfiles/favicon.ico' />
+    <link rel="stylesheet" type="text/css" href="webfiles/sloop.css">
+    <style>
+        body {
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .debug-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 24px;
+        }
+        .debug-card {
+            background: var(--secondary-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            transition: var(--transition);
+            box-shadow: var(--shadow);
+        }
+        .debug-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+        .debug-card h3 {
+            margin: 0 0 12px 0;
+            color: var(--accent-blue);
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .debug-card p {
+            color: var(--text-secondary);
+            margin: 0 0 16px 0;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .debug-card a {
+            color: var(--accent-blue);
+            text-decoration: none;
+            font-weight: 500;
+            padding: 8px 16px;
+            background: var(--accent-bg);
+            border-radius: 6px;
+            display: inline-block;
+            transition: var(--transition);
+        }
+        .debug-card a:hover {
+            background: var(--accent-blue);
+            color: white;
+            transform: translateY(-1px);
+        }
+        .breadcrumb {
+            background: var(--secondary-bg);
+            padding: 12px 16px;
+            border-radius: var(--border-radius);
+            margin-bottom: 24px;
+            border: 1px solid var(--border-color);
+        }
+        .breadcrumb a {
+            color: var(--accent-blue);
+            text-decoration: none;
+        }
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body onload="loadHomeRef();">
-[ <a id="homeLink">Home</a> ]
+<div class="breadcrumb">
+    <a id="homeLink">🏠 Home</a>
+</div>
 
-<h2>Sloop Debug Menu</h2>
+<h1 style="color: var(--text-primary); margin: 0 0 8px 0; font-size: 28px; font-weight: 700;">🔧 Sloop Debug Tools</h1>
+<p style="color: var(--text-secondary); margin: 0 0 24px 0; font-size: 16px;">Advanced debugging and monitoring tools for Sloop</p>
 
-<ul>
-    <li><a href="debug/listkeys/">Query Data Store</a> - Allows you to query keys and values from the badger store</li>
-    <li><a href="debug/histogram/">Sloop Keys Histogram</a> - View the keys histogram</li>
-    <li><a href="debug/config/">Config</a> - View the current active config for Sloop</li>
-    <li><a href="debug/tables/">Tables</a> - View Badger LSM Table Info</li>
-    <li><a href="debug/requests">Badger Requests</a></li>
-    <li><a href="debug/events">Badger Events</a></li>
-    <li><a href="debug/vars">Badger Metrics</a></li>
-    <li><a href="/metrics">Sloop Metrics</a></li>
-</ul>
+<div class="debug-grid">
+    <div class="debug-card">
+        <h3>🗄️ Data Store Query</h3>
+        <p>Query keys and values directly from the Badger database. Useful for debugging data storage issues and exploring the internal structure.</p>
+        <a href="debug/listkeys/">Open Query Tool</a>
+    </div>
+    
+    <div class="debug-card">
+        <h3>📊 Keys Histogram</h3>
+        <p>Visualize the distribution of keys across partitions and tables. Helps identify storage patterns and potential optimization opportunities.</p>
+        <a href="debug/histogram/">View Histogram</a>
+    </div>
+    
+    <div class="debug-card">
+        <h3>⚙️ Configuration</h3>
+        <p>View the current active configuration for Sloop including all runtime parameters and settings.</p>
+        <a href="debug/config/">View Config</a>
+    </div>
+    
+    <div class="debug-card">
+        <h3>🗂️ LSM Tables</h3>
+        <p>Inspect Badger LSM table information including levels, key counts, and size metrics for performance analysis.</p>
+        <a href="debug/tables/">View Tables</a>
+    </div>
+    
+    <div class="debug-card">
+        <h3>📡 HTTP Requests</h3>
+        <p>Monitor HTTP request traces and performance metrics. Useful for debugging API performance issues.</p>
+        <a href="debug/requests">View Requests</a>
+    </div>
+    
+    <div class="debug-card">
+        <h3>📋 System Events</h3>
+        <p>View system-level events and traces from the Badger database engine and internal operations.</p>
+        <a href="debug/events">View Events</a>
+    </div>
+    
+    <div class="debug-card">
+        <h3>📈 Internal Metrics</h3>
+        <p>Access detailed internal metrics and variables from the Badger database for performance monitoring.</p>
+        <a href="debug/vars">View Variables</a>
+    </div>
+    
+    <div class="debug-card">
+        <h3>🎯 Prometheus Metrics</h3>
+        <p>View Prometheus-compatible metrics for monitoring and alerting. Includes custom Sloop metrics and system metrics.</p>
+        <a href="/metrics">View Metrics</a>
+    </div>
+</div>
 
 </body>
 </html>

@@ -8,9 +8,13 @@ For full license text, see LICENSE.txt file in the repo root or https://opensour
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel='shortcut icon' type='image/x-icon' href='webfiles/favicon.ico'/>
     <link rel="stylesheet" type="text/css" href="webfiles/sloop.css">
     <link rel="stylesheet" type="text/css" href="webfiles/resource.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/nprogress@0.2.0/nprogress.css"  />
     <link rel="stylesheet" type="text/css" href="https://cemerick.github.io/jsdifflib/diffview.css"  />
 
@@ -27,38 +31,78 @@ For full license text, see LICENSE.txt file in the repo root or https://opensour
 <body>
 <div id="resource_body" style="padding:10px">
 <div id="resource_container">
-    <button id='close' onclick='this.parentNode.parentNode.parentNode.removeChild(this.parentNode.parentNode); return false;'>X</button>
-    <h2>Details</h2>
-    <b>Name</b>: {{.Name}}<br>
-    <b>Namespace</b>: {{.Namespace}}<br>
-    <b>Kind</b>: {{.Kind}}<br><br>
-
-    <a href="{{.SelfUrl}}" target="_blank">Open In New Tab</a><br>
+    <div class="resource-header">
+        <button id='close' onclick='this.parentNode.parentNode.parentNode.removeChild(this.parentNode.parentNode); return false;'>×</button>
+        <h2>📋 Resource Details</h2>
+        <div class="resource-meta">
+            <div class="resource-meta-item">
+                <div class="resource-meta-label">Name</div>
+                <div class="resource-meta-value">{{.Name}}</div>
+            </div>
+            <div class="resource-meta-item">
+                <div class="resource-meta-label">Namespace</div>
+                <div class="resource-meta-value">{{.Namespace}}</div>
+            </div>
+            <div class="resource-meta-item">
+                <div class="resource-meta-label">Kind</div>
+                <div class="resource-meta-value">{{.Kind}}</div>
+            </div>
+        </div>
+    </div>
 
     {{if ne (len .Links) 0 }}
-        <h2>Links</h2>
-        {{range .Links}}<a href="{{.Url}}" target="_blank">{{.Text}}</a><br>{{end}}
+    <div class="resource-section">
+        <h2><span class="section-icon">🔗</span> External Links</h2>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+            {{range .Links}}
+            <a href="{{.Url}}" target="_blank" style="background: var(--accent-blue); color: white; padding: 8px 12px; border-radius: 6px; text-decoration: none; font-size: 13px; transition: var(--transition);">{{.Text}}</a>
+            {{end}}
+        </div>
+        <div style="margin-top: 12px;">
+            <a href="{{.SelfUrl}}" target="_blank" style="color: var(--accent-blue); text-decoration: none; font-size: 13px;">🔗 Open in New Tab</a>
+        </div>
+    </div>
     {{end}}
 
-    <div id="resource_payload">
-        <h2>Viewing range {{.ClickTime}} +/- {{.PlusMinusTime}}</h2>
+    <div id="resource_payload" class="resource-section">
+        <h2><span class="section-icon">📊</span> Payload History</h2>
+        <div style="background: var(--accent-bg); padding: 12px; border-radius: 6px; margin-bottom: 16px; font-size: 13px; color: var(--text-secondary);">
+            <strong>Time Range:</strong> {{.ClickTime}} ± {{.PlusMinusTime}}
+        </div>
         <table id="resource_event_table">
             <tr v-if="sortedResPayloads.length">
-                <th @click="sort('leftPayload')">Left Payload</th>
-                <th @click="sort('rightPayload')">Right Payload</th>
-                <th>Payload Link</th>
-                <th @click="sort('payloadTime')">PayloadTime &#x21C5</th>
+                <th @click="sort('leftPayload')">📄 Left Payload</th>
+                <th @click="sort('rightPayload')">📄 Right Payload</th>
+                <th>🔗 Details</th>
+                <th @click="sort('payloadTime')">⏰ Timestamp ↕</th>
             </tr>
-            <p v-if="!sortedResPayloads.length"><i>No payloads found for this period</i></p>
+            <tr v-if="!sortedResPayloads.length">
+                <td colspan="4" class="empty-state">
+                    <div class="empty-state-icon">📭</div>
+                    <h3>No Payloads Found</h3>
+                    <p>No payload data available for the selected time period</p>
+                </td>
+            </tr>
             <tr v-for="res in sortedResPayloads">
-                <td>${res.leftPayload}<input type="radio" :value="res.payload" :id="res.payloadKey" v-model="leftPayload" v-on:change="doDiff();"/></td>
-                <td>${res.rightPayload}<input type="radio" :value="res.payload" :id="res.payloadKey" v-model="rightPayload" v-on:change="doDiff();"/></td>
-                <td><a :href ="res.origValue | get_payload_url" target="_blank">Details</a></td>
+                <td>
+                    <label style="display: flex; align-items: center; cursor: pointer;">
+                        <span style="flex: 1;">Left</span>
+                        <input type="radio" :value="res.payload" :id="res.payloadKey + '_left'" v-model="leftPayload" v-on:change="doDiff();"/>
+                    </label>
+                </td>
+                <td>
+                    <label style="display: flex; align-items: center; cursor: pointer;">
+                        <span style="flex: 1;">Right</span>
+                        <input type="radio" :value="res.payload" :id="res.payloadKey + '_right'" v-model="rightPayload" v-on:change="doDiff();"/>
+                    </label>
+                </td>
+                <td><a :href ="res.origValue | get_payload_url" target="_blank">View Raw</a></td>
                 <td>${ res.payloadTime | get_formatted_time}</td>
             </tr>
         </table>
         <div id="diffoutput"> </div>
     </div>
+
     <script>
     function diffUsingJS(leftText, rightText, viewType) {
         "use strict";
@@ -170,21 +214,27 @@ For full license text, see LICENSE.txt file in the repo root or https://opensour
     });
 </script>
 
-<div id="resource_events">
-    <h2>Events</h2>
+<div id="resource_events" class="resource-section">
+    <h2><span class="section-icon">📋</span> Events</h2>
     <table id="resource_event_table">
         <tr v-if="sortedResEvents.length">
-            <th>Payload Link</th>
-            <th @click="sort('message')">Message &#x21C5</th>
-            <th @click="sort('reason')">Reason &#x21C5</th>
-            <th @click="sort('source')">Source &#x21C5</th>
-            <th @click="sort('count')">Count &#x21C5</th>
-            <th @click="sort('firstSeen')">First seen &#x21C5</th>
-            <th @click="sort('lastSeen')">Last seen &#x21C5</th>
+            <th>🔗 Details</th>
+            <th @click="sort('message')">💬 Message ↕</th>
+            <th @click="sort('reason')">⚠️ Reason ↕</th>
+            <th @click="sort('source')">🖥️ Source ↕</th>
+            <th @click="sort('count')">🔢 Count ↕</th>
+            <th @click="sort('firstSeen')">⏰ First Seen ↕</th>
+            <th @click="sort('lastSeen')">⏰ Last Seen ↕</th>
         </tr>
-        <p v-if="!sortedResEvents.length"><i>No events found for this period</i></p>
+        <tr v-if="!sortedResEvents.length">
+            <td colspan="7" class="empty-state">
+                <div class="empty-state-icon">📭</div>
+                <h3>No Events Found</h3>
+                <p>No events recorded for the selected time period</p>
+            </td>
+        </tr>
         <tr v-for="resEvent in sortedResEvents">
-            <td><a :href="resEvent.origValue | get_payload_url" target="_blank">Details</a></td>
+            <td><a :href="resEvent.origValue | get_payload_url" target="_blank">View Raw</a></td>
             <td>${ resEvent.message }</td>
             <td>${ resEvent.reason }</td>
             <td>${ resEvent.source }</td>
@@ -194,6 +244,7 @@ For full license text, see LICENSE.txt file in the repo root or https://opensour
         </tr>
     </table>
 </div>
+
 <script>
     new Vue({
         el: '#resource_events',

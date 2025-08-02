@@ -6,8 +6,6 @@ For full license text, see LICENSE.txt file in the repo root or https://opensour
 -->
 <!DOCTYPE html>
 <!--suppress HtmlUnknownTarget, JSUnresolvedVariable -->
-<style type="text/css">
-</style>
 <head>
     <script type="text/javascript">
         document.write("<base href='/" + window.location.pathname.split('/')[1] + "/' />");
@@ -15,29 +13,198 @@ For full license text, see LICENSE.txt file in the repo root or https://opensour
     <meta http-equiv="Content-type" content="text/html; charset=utf-8">
     <title>Sloop{{if (ne .CurrentContext "")}} - {{.CurrentContext}}{{end}}</title>
     <link rel="stylesheet" type="text/css" href="webfiles/sloop.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel='shortcut icon' type='image/x-icon' href='webfiles/favicon.ico'/>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css"
-          integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2"
-          crossorigin="anonymous">
 </head>
 
 <body>
 <div style="display: flex; width:100%; height:100%">
     <div id="sloopleftnav" class="sloopleftnav">
-        <span style="font-size:20px">Sloop v0.2</span><br>
-        <span style="font-size:12px">Kubernetes History Visualization</span><br><br>
-{{if (ne .CurrentContext "")}}
-        <label for="currentContext">Kubernetes Context:</label><br/>
-        <input type="text" id="currentContext" value="{{.CurrentContext}}" disabled="true"><br><br>
-{{end}}
-        <form action="" method="get">
-            <!-- Not showing the query drop down as we only have one query at the moment -->
-            <!-- <label for="filterquery">Query:</label><br /> -->
-            <select name="query" id="filterquery" hidden="true"> </select>
-            <!-- <br><br> -->
+        <div class="sloop-header">
+            <h1 class="sloop-title">Sloop v0.2</h1>
+            <p class="sloop-subtitle">Kubernetes History Visualization</p>
+        </div>
 
-            <label for="selectedEndTime">End Time:</label><br/>
-            <div>
+{{if (ne .CurrentContext "")}}
+        <div class="form-group">
+            <label class="form-label" for="currentContext">
+                <span class="status-indicator status-healthy"></span>
+                Kubernetes Context
+            </label>
+            <input type="text" id="currentContext" value="{{.CurrentContext}}" disabled="true">
+        </div>
+{{end}}
+
+        <form action="" method="get">
+            <select name="query" id="filterquery" hidden="true"> </select>
+
+            <div class="form-group">
+                <label class="form-label" for="selectedEndTime">End Time</label>
+                <div class="datetime-group">
+                    <input type="datetime-local" step="1" id="selectedEndTime" name="selectedEndTime" />
+                    <input type="button" value="Now" name="now" id="now">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="filterlookback">Look Back Range</label>
+                <select name="lookback" id="filterlookback">
+                    <option value="1h">1 Hour</option>
+                    <option value="3h">3 Hours</option>
+                    <option value="6h">6 Hours</option>
+                    <option value="12h">12 Hours</option>
+                    <option value="24h">1 Day</option>
+                    <option value="168h">1 Week</option>
+                    <option value="336h">2 Weeks</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="filternamespace">Filter Namespace</label>
+                <select name="namespace" id="filternamespace">
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="filterkind">Filter Kind</label>
+                <select id="filterkind" name="kind">
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="filtersort">Sort</label>
+                <select name="sort" id="filtersort">
+                    <option value="starttime">Start Time</option>
+                    <option value="mostevents">Most Events</option>
+                    <option value="name">Name</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="filternamematch">Name Filter</label>
+                <div class="search-container">
+                    <input type="text" name="namematch" id="filternamematch" placeholder="Search by name...">
+                </div>
+            </div>
+
+            <div class="button-group">
+                <input type="submit" value="Apply Filters">
+            </div>
+        </form>
+
+        <!-- Enhanced toggle switch -->
+        <div class="switch-container">
+            <p>Show Payload Changes</p>
+            <label class="switch"> 
+                <input type="checkbox" id="payloadCheck" onchange="payloadChecker()" checked>
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div class="links-section">
+            <h2>Quick Actions</h2>
+            <a href="debug/" class="nav-link">🔧 Debug Tools</a>
+            <a href="" id="datafilelink" class="nav-link">📊 Raw Data</a>
+            <a href="https://github.com/salesforce/sloop" target="_blank" class="nav-link">📚 Documentation</a>
+{{range .LeftBarLinks}}
+            <a href="{{.Url}}" target="_blank" class="nav-link">{{.Text}}</a>
+{{end}}
+        </div>
+    </div>
+
+    <div id="d3_here" class="svg-container">
+        <div id="loading-indicator" class="loading-overlay" style="display: none;">
+            <div class="loading-spinner"></div>
+            <p>Loading visualization...</p>
+        </div>
+    </div>
+</div>
+
+<!-- Enhanced loading overlay styles -->
+<style>
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(26, 29, 41, 0.9);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--border-color);
+    border-top: 3px solid var(--accent-blue);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 16px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-overlay p {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin: 0;
+}
+</style>
+
+<script src="https://d3js.org/d3.v5.js"></script>
+<script
+        src="https://code.jquery.com/jquery-3.4.1.min.js"
+        integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+        crossorigin="anonymous"></script>
+<script
+        src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"
+        integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU="
+        crossorigin="anonymous"></script>
+
+<!-- Resource page scripts -->
+<script src="https://unpkg.com/axios/dist/axios.min.js" async="" type="text/javascript"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js" async="" type="text/javascript"></script>
+<script src="https://unpkg.com/nprogress@0.2.0/nprogress.js" async="" type="text/javascript"></script>
+<script src="https://cemerick.github.io/jsdifflib/diffview.js" type="text/javascript" ></script>
+<script src="https://cemerick.github.io/jsdifflib/difflib.js" type="text/javascript" ></script>
+
+<script src="webfiles/filter.js"></script>
+<script>
+    // Enhanced initialization with loading states
+    document.addEventListener('DOMContentLoaded', function() {
+        const loadingIndicator = document.getElementById('loading-indicator');
+        
+        function showLoading() {
+            if (loadingIndicator) loadingIndicator.style.display = 'flex';
+        }
+        
+        function hideLoading() {
+            if (loadingIndicator) loadingIndicator.style.display = 'none';
+        }
+        
+        showLoading();
+        
+        // Set filters and get query URL
+        dataQueryUrl = setFiltersAndReturnQueryUrl("{{.DefaultLookback}}", "{{.DefaultKind}}", "{{.DefaultNamespace}}");
+        document.getElementById("datafilelink").href = dataQueryUrl;
+        
+        // Hide loading after a short delay to show the enhancement
+        setTimeout(hideLoading, 1000);
+    });
+</script>
+<script src="webfiles/sloop_ui.js"></script>
+</body>
+</html>
                 <input type="datetime-local" step="1" id="selectedEndTime" name="selectedEndTime" />
                 <input type="button" value="Now" name="now" id="now">
             </div><br>
